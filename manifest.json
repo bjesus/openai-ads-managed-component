@@ -1,0 +1,19 @@
+{
+  "name": "OpenAI Ads Measurement",
+  "description": "Measures website conversion events for attribution to ads in ChatGPT.",
+  "namespace": "openai-ads-measurement",
+  "icon": "",
+  "categories": ["Advertising"],
+  "provides": ["events"],
+  "allowCustomFields": true,
+  "permissions": {
+    "access_client_kv": {
+      "description": "Stores OpenAI attribution and browser reference identifiers.",
+      "required": true
+    },
+    "client_network_requests": {
+      "description": "Sends measurement events to the OpenAI Ads Measurement endpoint.",
+      "required": true
+    }
+  }
+}
