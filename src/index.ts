@@ -196,26 +196,6 @@ const buildEvent = (
   return event
 }
 
-// Lifecycle events observed in the captured page-view batch: the SDK emits an
-// initialization event followed by a diagnostic event alongside the first
-// measurement event.
-const buildSdkInitEvent = (sourceUrl: string): OaiEvent =>
-  buildEvent('openai::sdk_init', sourceUrl, { type: 'sdk_lifecycle' })
-
-const buildDiagnosticEvent = (sourceUrl: string): OaiEvent =>
-  buildEvent('oai::diagnostic', sourceUrl, {
-    config: { automatic_advanced_matching: 'not_found' },
-    consent: true,
-    dropped_event_count: 0,
-    dropped_event_name_counts: {},
-    dropped_event_phase_counts: {},
-    dropped_event_reason_counts: {},
-    is_first_consent_grant_in_session: true,
-    is_first_visit_in_session: true,
-    schema_version: 1,
-    type: 'diagnostic',
-  })
-
 const postEvents = (
   client: MCEvent['client'],
   pixelId: string,
@@ -303,8 +283,7 @@ const sendEvent = async (
   pixelId: string,
   name: string,
   payload: Record<string, unknown>,
-  ecommerce: Record<string, unknown>,
-  options: { includeLifecycleEvents?: boolean } = {}
+  ecommerce: Record<string, unknown>
 ) => {
   const obref = await getObref(client)
   const oppref = await getOppref(client)
@@ -338,17 +317,10 @@ const sendEvent = async (
     }
   )
 
-  const events: OaiEvent[] = []
-  if (options.includeLifecycleEvents) {
-    events.push(buildSdkInitEvent(sourceUrl))
-    events.push(buildDiagnosticEvent(sourceUrl))
-  }
-  events.push(oaiEvent)
-
   const eventPayload: OaiPayload = {
     obref,
     oppref,
-    events,
+    events: [oaiEvent],
   }
   const user = await buildUser(payload, ecommerce)
   if (user) {
@@ -364,11 +336,7 @@ export default async function (manager: Manager, settings: ComponentSettings) {
     const client = event.client
     const payload = (event.payload ?? {}) as Record<string, unknown>
     const ecommerce = (payload.ecommerce ?? {}) as Record<string, unknown>
-    // The captured page-view batch carries the SDK initialization and
-    // diagnostic lifecycle events alongside the measurement event.
-    await sendEvent(client, pixelId, 'page_viewed', payload, ecommerce, {
-      includeLifecycleEvents: true,
-    })
+    await sendEvent(client, pixelId, 'page_viewed', payload, ecommerce)
   }
   manager.addEventListener('pageview', pageviewListener)
 
